@@ -12,7 +12,7 @@ services:
       - ${PWD}/certs:/root/.local/share/mkcert
       - ${HOME}/.mkcert:/root/.mkcert
 
-  local:
+  traefik:
     image: traefik:latest
     environment:
       - PROJECT_NAME=${COMPOSE_PROJECT_NAME}  
@@ -28,10 +28,11 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       - "--providers.docker.constraints=Label(`traefik.${COMPOSE_PROJECT_NAME}`, `true`)"
       # - "--log.level=DEBUG"
+      # - "--accesslog=true"
     labels:
       - "traefik.enable=true"
       - "traefik.global=true"
-      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}.rule=HostSNI(`traefik.${COMPOSE_PROJECT_NAME}.localhost`) || HostSNI(`${COMPOSE_PROJECT_NAME}.localhost`)"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}.rule=HostSNI(`${COMPOSE_PROJECT_NAME}.localhost`) || HostSNI(`traefik.${COMPOSE_PROJECT_NAME}.localhost`)"
       - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}.entrypoints=websecure"
       - "traefik.tcp.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=443"
       - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}.tls.passthrough=true"
@@ -53,4 +54,4 @@ services:
       - "traefik.http.routers.web.tls=true"
       - "traefik.http.services.web.loadbalancer.server.port=80"
     depends_on:
-      - local
+      - traefik

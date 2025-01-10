@@ -15,7 +15,7 @@ services:
   traefik:
     image: traefik:latest
     environment:
-      - PROJECT_NAME=${COMPOSE_PROJECT_NAME}
+      - PROJECT_NAME=${COMPOSE_PROJECT_NAME}  
     command:      
       - "--api.insecure=true"
       - "--providers.file.directory=/etc/traefik"
@@ -28,7 +28,7 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       - "--providers.docker.constraints=Label(`traefik.${COMPOSE_PROJECT_NAME}`, `true`)"
       # - "--log.level=DEBUG"
-      # - "--accesslog=true"
+      - "--accesslog=true"
     labels:
       - "traefik.enable=true"
       - "traefik.global=true"
@@ -49,7 +49,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.${COMPOSE_PROJECT_NAME}=true"
-      - "traefik.http.routers.web.rule=Host(`${COMPOSE_PROJECT_NAME}.localhost`)"
+      - "traefik.http.routers.web.rule=Host(`app.${COMPOSE_PROJECT_NAME}.localhost`)"
       - "traefik.http.routers.web.entrypoints=websecure"
       - "traefik.http.routers.web.tls=true"
       - "traefik.http.services.web.loadbalancer.server.port=80"

@@ -30,6 +30,7 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       # - "--log.level=DEBUG"
+      # - "--accesslog=true"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "./certs:/etc/ssl/certs"
