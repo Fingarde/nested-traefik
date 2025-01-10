@@ -1,0 +1,39 @@
+services:
+  mkcert:
+    build:
+      context: .
+      dockerfile: .docker/mkcert.dockerfile
+    environment:
+      CAROOT: /root/.mkcert/
+      DOMAINS: "traefik.localhost"
+    volumes:
+      - ${PWD}/certs:/root/.local/share/mkcert
+      - ${HOME}/.mkcert:/root/.mkcert
+
+  global:
+    image: traefik:latest
+    network_mode: host
+    # ports:
+    #   - "80:80"
+    #   - "443:443"
+    #   - "8080:8080"
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.directory=/etc/traefik"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--serversTransport.insecureskipverify=true"
+      - "--providers.docker.constraints=Label(`traefik.global`, `true`)"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      # - "--log.level=DEBUG"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./certs:/etc/ssl/certs"
+      - "./.docker/traefik:/etc/traefik"
+    depends_on:
+      mkcert:
+        condition: service_completed_successfully

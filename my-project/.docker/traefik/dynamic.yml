@@ -1,0 +1,21 @@
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/ssl/certs/cert.pem
+        keyFile: /etc/ssl/certs/key.pem
+
+
+http:
+  routers:
+    dashboard:
+      rule: Host(`traefik.{{env "PROJECT_NAME"}}.localhost`)
+      entryPoints:
+        - websecure
+      service: dashboard
+      tls: true
+  services:
+    dashboard:
+      loadBalancer:
+        servers:
+          - url: http://localhost:8080

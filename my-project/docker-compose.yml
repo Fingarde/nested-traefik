@@ -1,0 +1,56 @@
+services:
+  mkcert:
+    build:
+      context: .
+      dockerfile: .docker/mkcert.dockerfile
+    environment:
+      - "CAROOT=/root/.mkcert/"
+      - "DOMAINS=*.${COMPOSE_PROJECT_NAME}.localhost ${COMPOSE_PROJECT_NAME}.localhost"
+    env_file:
+      - .env
+    volumes:
+      - ${PWD}/certs:/root/.local/share/mkcert
+      - ${HOME}/.mkcert:/root/.mkcert
+
+  local:
+    image: traefik:latest
+    environment:
+      - PROJECT_NAME=${COMPOSE_PROJECT_NAME}  
+    command:      
+      - "--api.insecure=true"
+      - "--providers.file.directory=/etc/traefik"
+      - "--providers.file.watch=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--providers.docker.constraints=Label(`traefik.${COMPOSE_PROJECT_NAME}`, `true`)"
+      # - "--log.level=DEBUG"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.global=true"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}.rule=HostSNI(`traefik.${COMPOSE_PROJECT_NAME}.localhost`) || HostSNI(`${COMPOSE_PROJECT_NAME}.localhost`)"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}.entrypoints=websecure"
+      - "traefik.tcp.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=443"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}.tls.passthrough=true"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./certs:/etc/ssl/certs"
+      - "./.docker/traefik:/etc/traefik"
+    depends_on:
+      mkcert:
+        condition: service_completed_successfully
+
+  web:
+    image: httpd:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.${COMPOSE_PROJECT_NAME}=true"
+      - "traefik.http.routers.web.rule=Host(`${COMPOSE_PROJECT_NAME}.localhost`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls=true"
+      - "traefik.http.services.web.loadbalancer.server.port=80"
+    depends_on:
+      - local
